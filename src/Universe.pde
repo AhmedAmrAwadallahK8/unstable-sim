@@ -1,33 +1,51 @@
 class Universe{
   ArrayList<Particle> particles;
-  int sample_size;
+  IntList usedParticlesIndices;
   
   Universe(){
     particles = new ArrayList<Particle>();
-    sample_size = 10;
+    usedParticlesIndices = new IntList();
   }
   
   void run(){
-    ArrayList<Particle> particles_sample = random_sample();
-    for(Particle p: particles_sample){
-      p.run(particles_sample);
+    shuffleParticles();
+    for(Particle p: particles){
+      p.run(particles);
     }
   }
   
-  ArrayList<Particle> random_sample(){
-    ArrayList<Particle> sample = new ArrayList<Particle>();
-    IntList used_particles = new IntList();
+  void shuffleParticles(){
+    ArrayList<Particle> shuffledParticles = new ArrayList<Particle>();
+    int randIndex;
     
     for(int i = 0; i < particles.size(); i++){
-      
-      int index = int(random(particles.size()));
-      while(used_particles.hasValue(index)){
-        index = int(random(particles.size()));
-      }
-      used_particles.append(index);
-      sample.add(particles.get(index));
+      randIndex = getValidRandomIndex();
+      usedParticlesIndices.append(randIndex);
+      Particle randParticle = particles.get(randIndex);
+      shuffledParticles.add(randParticle);
     }
-    return sample;
+    
+    particles = shuffledParticles;
+    usedParticlesIndices.clear();
+  }
+  
+  
+  int getValidRandomIndex(){
+    int randIndex;
+    randIndex = getRandomValueFromZeroToX(particles.size());
+    while(indexUsedAlready(randIndex)){
+      randIndex = getRandomValueFromZeroToX(particles.size());
+    }
+    return randIndex;
+  }
+  
+  boolean indexUsedAlready(int ind){
+    return usedParticlesIndices.hasValue(ind);
+    
+  }
+  
+  int getRandomValueFromZeroToX(int x){
+    return int(random(x));
   }
   
   void addParticle(Particle p){
@@ -36,7 +54,8 @@ class Universe{
   
   void addNRandomlyPlacedParticles(int n_particles){
     for (int i = 0; i < n_particles; i++) {
-      addParticle(new Particle(random(width),random(height)));
+      Particle newParticle = new Particle(random(width),random(height));
+      addParticle(newParticle);
     }
   }
 

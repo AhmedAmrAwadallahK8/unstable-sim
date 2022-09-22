@@ -1,16 +1,14 @@
 class Particle{
+  ArrayList<PVector> forces;
   PVector position;
   PVector velocity;
   PVector acceleration;
-  PVector impulse;
   float r;
   float maxforce;
   float maxspeed;
   float size;
   float mass;
   float grav_constant;
-  float impulse_time;
-  float current_impulse_time;
   float heat;
   float energy_lost_collish;
   float max_heat;
@@ -22,21 +20,17 @@ class Particle{
   
   Particle(float x, float y){
     acceleration = new PVector(0, 0);
-    impulse = new PVector(0,0);
-    
-    float angle = random(TWO_PI);
     velocity = new PVector(0, 0);
-    //velocity = new PVector(cos(angle), sin(angle));
-
     position = new PVector(x, y);
-    r = 2.0;
+    
     maxspeed = 20000;
     maxforce = 0;
+    
+    r = 2.0;
     size = 5;
     electron_size = 10;
     mass = 1;
-    current_impulse_time = 0;
-    impulse_time = 6;
+
     max_heat = 20000;
     heat_constant = 0;
     energy_lost_collish = 0.2;
@@ -46,12 +40,12 @@ class Particle{
     heat_loss = 5;
   }
   
-   void run(ArrayList<Particle> particles) {
+  void run(ArrayList<Particle> particles) {
     process_particle(particles);
     update();
-    //borders();
+    borders();
     render();
-  }
+   }
   
   void process_particle(ArrayList<Particle> particles) {
     PVector heatForce = heat();
@@ -99,16 +93,6 @@ class Particle{
   }
   
   PVector inelastic_collision(Particle other){
-    //PVector collish = new PVector(1, 0);
-    //PVector v_initial = velocity;
-    //PVector v_final = velocity.rotate(180);
-    //PVector delta_v = PVector.add(v_final, v_initial);
-    //float theta = delta_v.heading();
-    //float mag_v = PVector.dist(v_final, v_initial);
-    //collish.rotate(theta);
-    //collish.mult(mag_v);
-    //collish = delta_v.mult(mass).div(impulse_time);
-    
     PVector collish = new PVector(1, 0);
     PVector delta_v = PVector.sub(position, other.position);
     float dist = PVector.dist(position, other.position);
@@ -184,23 +168,17 @@ class Particle{
   }
   
   void update() {
-    // Update velocity
     velocity.add(acceleration);
     velocity.limit(maxspeed);
-    // Limit speed
+
     position.add(velocity);
-    // Reset accelertion to 0 each cycle
+
     acceleration.mult(0);
   }
   
   void borders() {
     PVector invert_x = new PVector(-1, 0);
     PVector invert_y = new PVector(0, -1);
-    
-    //if (position.x < -r) velocity.dot(invert_x);
-    //if (position.y < -r) velocity.dot(invert_y);
-    //if (position.x > width+r) velocity.dot(invert_x);
-    //if (position.y > height+r) velocity.dot(invert_y);
     if (position.x < -r) position.x = width+r;
     if (position.y < -r) position.y = height+r;
     if (position.x > width+r) position.x = -r;
@@ -208,15 +186,10 @@ class Particle{
   }
   
   void render() {
-    // Draw a triangle rotated in the direction of velocity
-    //float theta = velocity.heading2D() + radians(90);
-    // heading2D() above is now heading() but leaving old syntax until Processing.js catches up
     float mag_v = velocity.mag();
-    //fill(200, 100);
-    //stroke(255);
     float red = heat;
     float green = 0;
-    float blue = mag_v*50;
+    float blue = mag_v*20;
     
     fill(red, green, blue);
     stroke(red, green, blue);
