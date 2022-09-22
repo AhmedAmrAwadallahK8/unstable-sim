@@ -31,7 +31,7 @@ class Particle{
     electron_size = 10;
     mass = 1;
 
-    max_heat = 20000;
+    max_heat = 10000;
     heat_constant = 0;
     energy_lost_collish = 0.2;
     collish_constant = 40;
@@ -47,10 +47,8 @@ class Particle{
     render();
    }
   
-  void process_particle(ArrayList<Particle> particles) {
-    PVector heatForce = heat();
-    heatForce.mult(heat_constant);
-    applyForce(heatForce);
+  void process_particle(ArrayList<Particle> particles) {   
+    heat(particles);
     
     PVector grav = gravity(particles);
     grav.mult(grav_constant);
@@ -62,23 +60,39 @@ class Particle{
     
   }
   
-  PVector heat(){
+  void heat(ArrayList<Particle> particles){
     if(heat > max_heat){
       print("HEAT RELEASE EVENT\n");
-      float angle = random(TWO_PI);
-      PVector heatRelease = new PVector(cos(angle), sin(angle));
-      heatRelease.mult(heat);
-      heat -= max_heat;
-      return heatRelease;
+      releaseHeat(particles);
     }
     else{
       if(heat >= 0){
         heat -= heat_loss;
       }
-      return new PVector(0, 0);
-    }
-    
+    } 
   }
+  
+  void releaseHeat(ArrayList<Particle> particles){
+    PVector externalAccel;
+    for(Particle other: particles){
+      externalAccel = new PVector(1,0);
+      PVector deltaV = PVector.sub(position, other.position);
+      float dist = PVector.dist(position, other.position);
+      if(dist <= min_dist){
+        dist = min_dist;
+      }
+      float theta = deltaV.heading();
+      externalAccel.rotate(theta);
+      externalAccel.div(dist);
+      externalAccel.div(dist);
+      //externalAccel.div(dist);
+      externalAccel.mult(heat);
+      
+      other.acceleration.add(externalAccel);
+    }
+    heat -= max_heat;
+  }
+  
   PVector collision(ArrayList<Particle> particles){
     PVector collish = new PVector(0, 0);
     for (Particle other: particles){
@@ -168,21 +182,34 @@ class Particle{
   }
   
   void update() {
+    updateVelocity();
+    updatePosition();
+    updateAcceleration();
+  }
+  
+  void updateVelocity(){
     velocity.add(acceleration);
     velocity.limit(maxspeed);
-
+  }
+  
+  void updatePosition(){
     position.add(velocity);
-
+  }
+  
+  void updateAcceleration(){
     acceleration.mult(0);
   }
   
   void borders() {
-    PVector invert_x = new PVector(-1, 0);
-    PVector invert_y = new PVector(0, -1);
-    if (position.x < -r) position.x = width+r;
-    if (position.y < -r) position.y = height+r;
-    if (position.x > width+r) position.x = -r;
-    if (position.y > height+r) position.y = -r;
+    float escapeVelocityReduction = 0.5;
+    //if (position.x < -r) position.x = width+r;
+    //if (position.y < -r) position.y = height+r;
+    //if (position.x > width+r) position.x = -r;
+    //if (position.y > height+r) position.y = -r;
+    if (position.x < -r) velocity.mult(escapeVelocityReduction);
+    if (position.y < -r) velocity.mult(escapeVelocityReduction);
+    if (position.x > width+r) velocity.mult(escapeVelocityReduction);
+    if (position.y > height+r) velocity.mult(escapeVelocityReduction);
   }
   
   void render() {
