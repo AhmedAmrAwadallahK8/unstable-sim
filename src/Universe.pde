@@ -33,5 +33,11 @@ class Universe{
   void addParticle(Particle p){
     particles.add(p);
   }
+  
+  void addNRandomlyPlacedParticles(int n_particles){
+    for (int i = 0; i < n_particles; i++) {
+      addParticle(new Particle(random(width),random(height)));
+    }
+  }
 
 }
