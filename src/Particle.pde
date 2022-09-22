@@ -89,6 +89,11 @@ class Particle{
       externalAccel.mult(heat);
       
       other.acceleration.add(externalAccel);
+      
+      
+      if(dist <= 50){
+        other.heat -= 100;
+      }
     }
     heat -= max_heat;
   }
@@ -201,15 +206,18 @@ class Particle{
   }
   
   void borders() {
-    float escapeVelocityReduction = 0.5;
+    float escapeVelocityReduction = 0.99;
+    PVector yReduce = new PVector(1, escapeVelocityReduction);
+    PVector xReduce = new PVector(escapeVelocityReduction, 1);
+    
     //if (position.x < -r) position.x = width+r;
     //if (position.y < -r) position.y = height+r;
     //if (position.x > width+r) position.x = -r;
     //if (position.y > height+r) position.y = -r;
-    if (position.x < -r) velocity.mult(escapeVelocityReduction);
-    if (position.y < -r) velocity.mult(escapeVelocityReduction);
-    if (position.x > width+r) velocity.mult(escapeVelocityReduction);
-    if (position.y > height+r) velocity.mult(escapeVelocityReduction);
+    if ((position.x < -r) & (velocity.x < 0)) velocity.limit(2);
+    if ((position.y < -r) & (velocity.x < 0)) velocity.limit(2);
+    if ((position.x > width+r) & (velocity.x > 0)) velocity.limit(2);
+    if ((position.y > height+r) & (velocity.x > 0)) velocity.limit(2);
   }
   
   void render() {
