@@ -28,16 +28,16 @@ class Particle{
     
     r = 2.0;
     size = 5;
-    electron_size = 10;
+    electron_size = 5.5;
     mass = 1;
 
     max_heat = 10000;
     heat_constant = 0;
     energy_lost_collish = 0.2;
     collish_constant = 40;
-    grav_constant = 100;
+    grav_constant = 200; //100
     min_dist = 0.0000001;
-    heat_loss = 5;
+    heat_loss = 40;
   }
   
   void run(ArrayList<Particle> particles) {
@@ -62,7 +62,9 @@ class Particle{
   
   void heat(ArrayList<Particle> particles){
     if(heat > max_heat){
-      print("HEAT RELEASE EVENT\n");
+      print("HEAT RELEASE EVENT ");
+      print(random(10));
+      print("\n");
       releaseHeat(particles);
     }
     else{
@@ -81,18 +83,15 @@ class Particle{
       if(dist <= min_dist){
         dist = min_dist;
       }
-      float theta = deltaV.heading();
-      externalAccel.rotate(theta);
-      externalAccel.div(dist);
-      externalAccel.div(dist);
-      //externalAccel.div(dist);
-      externalAccel.mult(heat);
-      
-      other.acceleration.add(externalAccel);
-      
-      
-      if(dist <= 50){
-        other.heat -= 100;
+      if(dist <= 10){
+        float theta = deltaV.heading();
+        externalAccel.rotate(theta);
+        externalAccel.div(dist);
+        externalAccel.div(dist);
+        externalAccel.div(dist);
+        externalAccel.mult(1000);
+        other.acceleration.add(externalAccel);
+        other.heat += 100;
       }
     }
     heat -= max_heat;
@@ -214,17 +213,18 @@ class Particle{
     //if (position.y < -r) position.y = height+r;
     //if (position.x > width+r) position.x = -r;
     //if (position.y > height+r) position.y = -r;
-    if ((position.x < -r) & (velocity.x < 0)) velocity.limit(2);
-    if ((position.y < -r) & (velocity.x < 0)) velocity.limit(2);
-    if ((position.x > width+r) & (velocity.x > 0)) velocity.limit(2);
-    if ((position.y > height+r) & (velocity.x > 0)) velocity.limit(2);
+    if ((position.x < -r) & (velocity.x < 0)) velocity.limit(1);
+    if ((position.y < -r) & (velocity.x < 0)) velocity.limit(1);
+    if ((position.x > width+r) & (velocity.x > 0)) velocity.limit(1);
+    if ((position.y > height+r) & (velocity.x > 0)) velocity.limit(1);
   }
   
   void render() {
+    int maxColorVal = 255;
     float mag_v = velocity.mag();
-    float red = heat;
-    float green = 0;
-    float blue = mag_v*20;
+    float blue = heat*maxColorVal/max_heat;
+    float red = mag_v*maxColorVal/30;
+    float green = mag_v*maxColorVal/200;
     
     fill(red, green, blue);
     stroke(red, green, blue);
