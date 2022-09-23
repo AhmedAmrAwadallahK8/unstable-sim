@@ -29,17 +29,17 @@ class Particle{
     
     r = 2.0;
     size = 5;
-    electron_size = 35;
+    electron_size = 20;
     mass = 1;
 
     max_heat = 10000;
     heat_constant = 0;
-    energy_lost_collish = 0.2;
-    collish_constant = 40;
-    grav_constant = 150; //100
+    energy_lost_collish = 0.3;
+    collish_constant = 0.01;
+    grav_constant = 200; //100
     min_dist = 0.0000001;
-    heat_share_constant = .2;
-    heat_loss = 40;
+    heat_share_constant = .01;
+    heat_loss = 10;
   }
   
   void run(ArrayList<Particle> particles) {
@@ -49,73 +49,100 @@ class Particle{
     render();
    }
   
-  void process_particle(ArrayList<Particle> particles) {   
-    heat(particles);
-    
-    PVector grav = gravity(particles);
-    grav.mult(grav_constant);
-    applyForce(grav);
-    
-    PVector collish = collision(particles);
-    collish.mult(collish_constant);
-    applyForce(collish);
-    
+  void process_particle(ArrayList<Particle> particles) {
+    for(Particle other: particles){
+      if(other == this){
+        //Do Nothing to yourself
+      }
+      else{
+        calcAndApplyCollisionForce(other);
+        calcAndApplyGravityForce(other);
+        calcAndApplyHeatInteractions(other);
+      }
+    }
   }
   
-  void heat(ArrayList<Particle> particles){
-    if(heat > max_heat){
+  void calcAndApplyGravityForce(Particle other){
+    PVector grav = calcGravity(other);
+    grav.mult(grav_constant);
+    applyForce(grav);
+  }
+  
+  void calcAndApplyCollisionForce(Particle other){
+    PVector collish = calcCollision(other);
+    collish.mult(collish_constant);
+    applyForce(collish);
+  }
+  
+  void calcAndApplyHeatInteractions(Particle other){
+    if(particleExceedsMaximumHeat()){
       print("HEAT RELEASE EVENT ");
       print(random(10));
       print("\n");
-      releaseHeat(particles);
+      explosiveReleaseHeat(other);
     }
-    else{
-      if(heat >= 0){
-        heat -= heat_loss;
-      }
+    else if(particleAboveMinimumHeat()){
+      releaseHeat();
     } 
   }
   
-  void releaseHeat(ArrayList<Particle> particles){
-    PVector externalAccel;
-    for(Particle other: particles){
-      externalAccel = new PVector(1,0);
-      PVector deltaV = PVector.sub(position, other.position);
-      float dist = PVector.dist(position, other.position);
-      if(dist <= min_dist){
-        dist = min_dist;
-      }
-      if(dist <= 10){
-        float theta = deltaV.heading();
-        externalAccel.rotate(theta);
-        externalAccel.div(dist);
-        externalAccel.div(dist);
-        externalAccel.div(dist);
-        externalAccel.mult(1000);
-        other.acceleration.add(externalAccel);
-        other.heat += 100;
-      }
-    }
-    heat -= max_heat;
+  void releaseHeat(){
+    heat -= heat_loss;
   }
   
-  PVector collision(ArrayList<Particle> particles){
+  boolean particleAboveMinimumHeat(){
+    if(heat >= 0){
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
+  
+  boolean particleExceedsMaximumHeat(){
+    if(heat > max_heat){
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
+  
+  void explosiveReleaseHeat(Particle other){
+    PVector externalAccel;
+    externalAccel = new PVector(1,0);
+    PVector deltaV = PVector.sub(position, other.position);
+    float dist = PVector.dist(position, other.position);
+    if(dist <= min_dist){
+      dist = min_dist;
+    }
+    if(dist <= 10){
+      float theta = deltaV.heading();
+      externalAccel.rotate(theta);
+      externalAccel.div(dist);
+      externalAccel.div(dist);
+      externalAccel.div(dist);
+      externalAccel.mult(1000);
+      other.acceleration.add(externalAccel);
+      other.heat += 100;
+    }
+    
+  }
+  
+  PVector calcCollision(Particle other){
     PVector collish = new PVector(0, 0);
-    for (Particle other: particles){
-      if(other == this){
-        collish.mult(0);
-      }
-      else if(collided(other)){
-        collish = inelastic_collision(other);
-        //float this_to_other_heat = heat*heat_share_constant;
-        //heat = heat*(1-heat_share_constant);
-        //other.heat += this_to_other_heat;
+    if(collided(other)){
+      collish = inelastic_collision(other);
         
-        float other_to_this_heat = other.heat*heat_share_constant;
-        other.heat = other.heat*(1-heat_share_constant);
-        heat += other_to_this_heat;
         
-      }
+      float this_to_other_heat = heat*heat_share_constant;
+      heat = heat*(1-heat_share_constant);
+      other.heat += this_to_other_heat;
+        
+      //float other_to_this_heat = other.heat*heat_share_constant;
+      //other.heat = other.heat*(1-heat_share_constant);
+      //heat += other_to_this_heat;
+        
     }
     return collish;
   }
@@ -135,11 +162,11 @@ class Particle{
       
       collish.div(dist);
       collish.div(dist);
-      collish.div(dist);
+      //collish.div(dist);
     }
     else if (dist <= size+electron_size){
       collish.div(dist);
-
+      
     }
     
     
@@ -165,13 +192,11 @@ class Particle{
     acceleration.add(force);
   }
   
-  PVector gravity (ArrayList<Particle> particles) {
+  PVector calcGravity (Particle other) {
     PVector gravity_total = new PVector(0, 0);
-    for (Particle other : particles) {
-      
-      
+
       if(other == this){
-        
+        //Do Nothing because this force does not impact the particles own self
       }
       else{
         float distance = PVector.dist(other.position, position);
@@ -187,10 +212,7 @@ class Particle{
         gravity.div(distance);
         gravity.div(distance);
         gravity_total.add(gravity);
-        
-        
       }
-    }
     
     return gravity_total;
   }
@@ -198,7 +220,7 @@ class Particle{
   void update() {
     updateVelocity();
     updatePosition();
-    updateAcceleration();
+    resetAcceleration();
   }
   
   void updateVelocity(){
@@ -210,23 +232,55 @@ class Particle{
     position.add(velocity);
   }
   
-  void updateAcceleration(){
+  void resetAcceleration(){
     acceleration.mult(0);
   }
   
   void borders() {
-    float escapeVelocityReduction = 0.99;
-    PVector yReduce = new PVector(1, escapeVelocityReduction);
-    PVector xReduce = new PVector(escapeVelocityReduction, 1);
-    
-    //if (position.x < -r) position.x = width+r;
-    //if (position.y < -r) position.y = height+r;
-    //if (position.x > width+r) position.x = -r;
-    //if (position.y > height+r) position.y = -r;
-    if ((position.x < -r) & (velocity.x < 0)) velocity.limit(1);
-    if ((position.y < -r) & (velocity.x < 0)) velocity.limit(1);
-    if ((position.x > width+r) & (velocity.x > 0)) velocity.limit(1);
-    if ((position.y > height+r) & (velocity.x > 0)) velocity.limit(1);
+    if (beyondWestBorder()) velocity.limit(1);
+    if (beyondNorthBorder()) velocity.limit(1);
+    if (beyondEastBorder()) velocity.limit(1);
+    if (beyondSouthBorder()) velocity.limit(1);
+    //if (beyondWestBorder() & (velocity.x < 0)) velocity.limit(1);
+    //if (beyondNorthBorder() & (velocity.x < 0)) velocity.limit(1);
+    //if (beyondEastBorder() & (velocity.x > 0)) velocity.limit(1);
+    //if (beyondSouthBorder() & (velocity.x > 0)) velocity.limit(1);
+  }
+  
+  boolean beyondNorthBorder(){
+    if (position.y < -r){
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
+  
+  boolean beyondSouthBorder(){
+    if (position.y > height+r){
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
+  
+  boolean beyondEastBorder(){
+    if (position.x > width+r){
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
+  
+  boolean beyondWestBorder(){
+    if (position.x < -r){
+      return true;
+    }
+    else{
+      return false;
+    }
   }
   
   void render() {

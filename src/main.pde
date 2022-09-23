@@ -9,16 +9,7 @@ void setup(){
  
 void draw(){
   background(50);
-  if(count % 2 == 0){
-    sim.run();
-  }
-  else{
-    sim.render();
-  }
-  count++;
-  if(count > 1000){
-    count = 0;
-  }
+  sim.run();
 }
  
 void mouseDragged(){
