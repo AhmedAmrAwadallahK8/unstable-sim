@@ -14,6 +14,12 @@ class Universe{
     }
   }
   
+  void render(){
+    for(Particle p: particles){
+      p.render();
+    }
+  }
+  
   void shuffleParticles(){
     ArrayList<Particle> shuffledParticles = new ArrayList<Particle>();
     int randIndex;

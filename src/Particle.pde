@@ -17,26 +17,28 @@ class Particle{
   float min_dist;
   float heat_loss;
   float electron_size;
+  float heat_share_constant;
   
   Particle(float x, float y){
     acceleration = new PVector(0, 0);
     velocity = new PVector(0, 0);
     position = new PVector(x, y);
     
-    maxspeed = 20000;
+    maxspeed = 200;
     maxforce = 0;
     
     r = 2.0;
     size = 5;
-    electron_size = 5.5;
+    electron_size = 35;
     mass = 1;
 
     max_heat = 10000;
     heat_constant = 0;
     energy_lost_collish = 0.2;
     collish_constant = 40;
-    grav_constant = 200; //100
+    grav_constant = 150; //100
     min_dist = 0.0000001;
+    heat_share_constant = .2;
     heat_loss = 40;
   }
   
@@ -105,6 +107,14 @@ class Particle{
       }
       else if(collided(other)){
         collish = inelastic_collision(other);
+        //float this_to_other_heat = heat*heat_share_constant;
+        //heat = heat*(1-heat_share_constant);
+        //other.heat += this_to_other_heat;
+        
+        float other_to_this_heat = other.heat*heat_share_constant;
+        other.heat = other.heat*(1-heat_share_constant);
+        heat += other_to_this_heat;
+        
       }
     }
     return collish;
@@ -127,7 +137,7 @@ class Particle{
       collish.div(dist);
       collish.div(dist);
     }
-    else if (dist <= size*electron_size){
+    else if (dist <= size+electron_size){
       collish.div(dist);
 
     }
@@ -142,7 +152,7 @@ class Particle{
   
   boolean collided(Particle other){
     float distance = PVector.dist(other.position, position);
-    if(distance <= size*electron_size){
+    if(distance <= size+electron_size){
       return true;
     }
     else{
