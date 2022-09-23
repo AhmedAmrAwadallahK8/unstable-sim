@@ -35,9 +35,9 @@ class Particle{
     max_heat = 10000;
     heat_constant = 0;
     energy_lost_collish = 0.3;
-    collish_constant = 0.01;
-    grav_constant = 200; //100
-    min_dist = 0.0000001;
+    collish_constant = 100;
+    grav_constant = 300; //100
+    min_dist = 0.001;
     heat_share_constant = .01;
     heat_loss = 10;
   }
@@ -57,7 +57,7 @@ class Particle{
       else{
         calcAndApplyCollisionForce(other);
         calcAndApplyGravityForce(other);
-        calcAndApplyHeatInteractions(other);
+        //calcAndApplyHeatInteractions(other);
       }
     }
   }
@@ -112,13 +112,13 @@ class Particle{
     PVector externalAccel;
     externalAccel = new PVector(1,0);
     PVector deltaV = PVector.sub(position, other.position);
-    float dist = PVector.dist(position, other.position);
-    if(dist <= min_dist){
+    float dist = deltaV.mag();
+    if(otherParticleBelowMinimumDist(dist)){
       dist = min_dist;
     }
-    if(dist <= 10){
-      float theta = deltaV.heading();
-      externalAccel.rotate(theta);
+    if(otherParticleInCloseProximity(dist)){
+      float explosionDirection = deltaV.heading();
+      externalAccel.rotate(explosionDirection);
       externalAccel.div(dist);
       externalAccel.div(dist);
       externalAccel.div(dist);
@@ -126,7 +126,24 @@ class Particle{
       other.acceleration.add(externalAccel);
       other.heat += 100;
     }
-    
+  }
+  
+  boolean otherParticleBelowMinimumDist(float dist){ //Not sure i like this function
+    if(dist <= min_dist){
+      return true;
+    }
+    else{
+      return false;
+    }
+  }
+  
+  boolean otherParticleInCloseProximity(float dist){
+    if(dist <= 10){
+      return true;
+    }
+    else{
+      return false;
+    }
   }
   
   PVector calcCollision(Particle other){
@@ -134,10 +151,10 @@ class Particle{
     if(collided(other)){
       collish = inelastic_collision(other);
         
-        
-      float this_to_other_heat = heat*heat_share_constant;
-      heat = heat*(1-heat_share_constant);
-      other.heat += this_to_other_heat;
+      //Heat SHaring Code
+      //float this_to_other_heat = heat*heat_share_constant;
+      //heat = heat*(1-heat_share_constant);
+      //other.heat += this_to_other_heat;
         
       //float other_to_this_heat = other.heat*heat_share_constant;
       //other.heat = other.heat*(1-heat_share_constant);
@@ -151,17 +168,17 @@ class Particle{
     PVector collish = new PVector(1, 0);
     PVector delta_v = PVector.sub(position, other.position);
     float dist = PVector.dist(position, other.position);
-    if(dist <= min_dist){
+    if(otherParticleBelowMinimumDist(dist)){
       dist = min_dist;
     }
        
-    float theta = delta_v.heading();
-    collish.rotate(theta);
+    float collisionForceDirection = delta_v.heading();
+    collish.rotate(collisionForceDirection);
     
     if(dist <= 1){
       
       collish.div(dist);
-      collish.div(dist);
+      //collish.div(dist);
       //collish.div(dist);
     }
     else if (dist <= size+electron_size){
@@ -193,29 +210,24 @@ class Particle{
   }
   
   PVector calcGravity (Particle other) {
-    PVector gravity_total = new PVector(0, 0);
-
-      if(other == this){
-        //Do Nothing because this force does not impact the particles own self
-      }
-      else{
-        float distance = PVector.dist(other.position, position);
-        if(distance <= 2*size){
-          distance = 2*size;
-        }
-        PVector distance_vec = PVector.sub(other.position, position);
-        float theta = distance_vec.heading();
-        PVector gravity = new PVector(1, 0);
-        gravity.rotate(theta);
-        gravity.mult(mass);
-        gravity.mult(other.mass);
-        gravity.div(distance);
-        gravity.div(distance);
-        gravity_total.add(gravity);
-      }
+    PVector gravity = new PVector(1, 0);
+    PVector deltaDistance = PVector.sub(other.position, position);
+    float dist = deltaDistance.mag();
+    if(otherParticleBelowMinimumDist(dist)){
+      dist = min_dist;
+    }
+    float gravityDirection = deltaDistance.heading();
     
-    return gravity_total;
+    gravity.rotate(gravityDirection);
+    gravity.mult(mass);
+    gravity.mult(other.mass);
+    gravity.div(dist);
+    gravity.div(dist);
+    
+    return gravity;
   }
+  
+  
   
   void update() {
     updateVelocity();

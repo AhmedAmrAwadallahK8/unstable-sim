@@ -4,7 +4,7 @@ int count = 0;
 void setup(){
   size(1000,800);
   sim = new Universe();
-  sim.addNRandomlyPlacedParticles(500);
+  //sim.addNRandomlyPlacedParticles(500);
 }
  
 void draw(){
