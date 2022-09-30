@@ -4,11 +4,14 @@ int count = 0;
 void setup(){
   size(1000,800);
   sim = new Universe();
-  //sim.addNRandomlyPlacedParticles(500);
+  sim.addNRandomlyPlacedParticles(500);
 }
  
 void draw(){
-  background(50);
+  //background(50);
+  //noStroke();
+  fill(100, 140); //140
+  rect(0,0,width,height);
   sim.run();
 }
  

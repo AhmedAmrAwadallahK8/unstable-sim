@@ -18,13 +18,14 @@ class Particle{
   float heat_loss;
   float electron_size;
   float heat_share_constant;
+  boolean explosionCycle;
   
   Particle(float x, float y){
     acceleration = new PVector(0, 0);
     velocity = new PVector(0, 0);
     position = new PVector(x, y);
     
-    maxspeed = 200;
+    maxspeed = 20;
     maxforce = 0;
     
     r = 2.0;
@@ -32,14 +33,15 @@ class Particle{
     electron_size = 20;
     mass = 1;
 
-    max_heat = 10000;
+    max_heat = 1000;
     heat_constant = 0;
     energy_lost_collish = 0.3;
-    collish_constant = 100;
-    grav_constant = 300; //100
-    min_dist = 0.001;
-    heat_share_constant = .01;
-    heat_loss = 10;
+    collish_constant = 60;
+    grav_constant = 50; //50
+    min_dist = 0.1;
+    heat_share_constant = .0001;
+    heat_loss = 0.01;
+    explosionCycle = false;
   }
   
   void run(ArrayList<Particle> particles) {
@@ -52,12 +54,12 @@ class Particle{
   void process_particle(ArrayList<Particle> particles) {
     for(Particle other: particles){
       if(other == this){
-        //Do Nothing to yourself
+        //Particles do not interact with themselves
       }
       else{
         calcAndApplyCollisionForce(other);
         calcAndApplyGravityForce(other);
-        //calcAndApplyHeatInteractions(other);
+        calcAndApplyHeatInteractions(other);
       }
     }
   }
@@ -76,12 +78,14 @@ class Particle{
   
   void calcAndApplyHeatInteractions(Particle other){
     if(particleExceedsMaximumHeat()){
-      print("HEAT RELEASE EVENT ");
-      print(random(10));
-      print("\n");
+      explosionCycle = true;
+      //print("HEAT RELEASE EVENT ");
+      //print(random(10));
+      //print("\n");
       explosiveReleaseHeat(other);
     }
     else if(particleAboveMinimumHeat()){
+      explosionCycle = false;
       releaseHeat();
     } 
   }
@@ -122,10 +126,11 @@ class Particle{
       externalAccel.div(dist);
       externalAccel.div(dist);
       externalAccel.div(dist);
-      externalAccel.mult(1000);
+      externalAccel.mult(100000);
       other.acceleration.add(externalAccel);
-      other.heat += 100;
+      other.heat += 10;
     }
+    
   }
   
   boolean otherParticleBelowMinimumDist(float dist){ //Not sure i like this function
@@ -138,7 +143,7 @@ class Particle{
   }
   
   boolean otherParticleInCloseProximity(float dist){
-    if(dist <= 10){
+    if(dist <= 30){ //THis needs to be a constant
       return true;
     }
     else{
@@ -152,13 +157,13 @@ class Particle{
       collish = inelastic_collision(other);
         
       //Heat SHaring Code
-      //float this_to_other_heat = heat*heat_share_constant;
-      //heat = heat*(1-heat_share_constant);
-      //other.heat += this_to_other_heat;
+      float this_to_other_heat = heat*heat_share_constant;
+      heat = heat*(1-heat_share_constant);
+      other.heat += this_to_other_heat;
         
-      //float other_to_this_heat = other.heat*heat_share_constant;
-      //other.heat = other.heat*(1-heat_share_constant);
-      //heat += other_to_this_heat;
+      float other_to_this_heat = other.heat*heat_share_constant;
+      other.heat = other.heat*(1-heat_share_constant);
+      heat += other_to_this_heat;
         
     }
     return collish;
@@ -176,12 +181,13 @@ class Particle{
     collish.rotate(collisionForceDirection);
     
     if(dist <= 1){
-      
+      //collish.mult(0);
       collish.div(dist);
-      //collish.div(dist);
-      //collish.div(dist);
+      collish.div(dist);
+      collish.div(dist);
     }
     else if (dist <= size+electron_size){
+      collish.div(dist);
       collish.div(dist);
       
     }
@@ -237,8 +243,17 @@ class Particle{
   
   void updateVelocity(){
     velocity.add(acceleration);
-    velocity.limit(maxspeed);
+    if(explosionCycle){
+      velocity.limit(maxspeed*9);
+      heat = 0;
+    }
+    else{
+      velocity.limit(maxspeed);
+    }
+    
   }
+  
+ 
   
   void updatePosition(){
     position.add(velocity);
@@ -301,6 +316,8 @@ class Particle{
     float blue = heat*maxColorVal/max_heat;
     float red = mag_v*maxColorVal/30;
     float green = mag_v*maxColorVal/200;
+    //float red = 0;
+    //float green = 0;
     
     fill(red, green, blue);
     stroke(red, green, blue);
