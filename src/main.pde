@@ -20,5 +20,6 @@ void mouseDragged(){
 }
  
 void mousePressed(){
-  sim.addParticle(new Particle(mouseX, mouseY));
+  sim.addParticleWithRandomV(new Particle(mouseX, mouseY));
+  //sim.addParticle(new Particle(mouseX, mouseY));
 }

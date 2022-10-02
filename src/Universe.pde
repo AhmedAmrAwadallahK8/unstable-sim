@@ -8,9 +8,12 @@ class Universe{
   }
   
   void run(){
-    shuffleParticles();
+    //shuffleParticles();
     for(Particle p: particles){
       p.run(particles);
+    }
+    for(Particle p: particles){
+      p.update();
     }
   }
   
@@ -55,6 +58,12 @@ class Universe{
   }
   
   void addParticle(Particle p){
+    particles.add(p);
+    
+  }
+  
+  void addParticleWithRandomV(Particle p){
+    p.setVelocityRandom();
     particles.add(p);
   }
   
