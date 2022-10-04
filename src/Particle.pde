@@ -10,7 +10,7 @@ class Particle{
   float mass;
   float grav_constant;
   float heat;
-  float energy_lost_collish;
+  float energy_lost_collish_constant;
   float max_heat;
   float collish_constant;
   float heat_constant;
@@ -30,17 +30,17 @@ class Particle{
     
     r = 2.0;
     size = 5;
-    electron_size = 20;
+    electron_size =20; //20
     mass = 1;
 
     max_heat = 2000;
     heat_constant = 0;
-    energy_lost_collish = 0.3;
-    collish_constant = 0.01; //60
-    grav_constant = 70; //50
+    energy_lost_collish_constant = 0.3; //0.3
+    collish_constant = 0.01; //0.01
+    grav_constant = 120; //70 //120
     min_dist = 0.01;
     heat_share_constant = .0001;
-    heat_loss = 0.01;
+    heat_loss = 0.02; //0.02
     explosionCycle = false;
   }
   
@@ -57,8 +57,8 @@ class Particle{
         //Particles do not interact with themselves
       }
       else{
-        calcAndApplyCollisionForce(other);
         calcAndApplyGravityForce(other);
+        calcAndApplyCollisionForce(other);
         calcAndApplyHeatInteractions(other);
       }
     }
@@ -68,12 +68,14 @@ class Particle{
     PVector grav = calcGravity(other);
     grav.mult(grav_constant);
     applyForce(grav);
+
   }
   
   void calcAndApplyCollisionForce(Particle other){
     PVector collish = calcCollision(other);
     collish.mult(collish_constant);
     applyForce(collish);
+    other.applyForce(collish.rotate(PI));
   }
   
   void calcAndApplyHeatInteractions(Particle other){
@@ -171,9 +173,6 @@ class Particle{
   }
   
   PVector inelastic_collision(Particle other){
-    float angle_diff = PVector.angleBetween(velocity, other.velocity);
-    int energy_mod = int((1-cos(angle_diff))/2);
-    energy_mod = 1;
     PVector collish = new PVector(1, 0);
     PVector delta_v = PVector.sub(position, other.position);
     PVector dv = PVector.sub(velocity, other.velocity);
@@ -197,14 +196,17 @@ class Particle{
     }
     
     
-    
-    
-    float energy_lost_angle_modified = energy_lost_collish*energy_mod;
-    float v_lost = velocity.mult(energy_lost_angle_modified).mag();
+    float angle_diff = PVector.angleBetween(velocity, other.velocity);
+    float energy_mod = (1-cos(angle_diff))/2;
+    PVector temp_v = new PVector(0,0);
+    float mag_v = velocity.mag()/1000;
+    temp_v.add(velocity);
+    float energy_lost_collish = energy_lost_collish_constant*energy_mod;
+    float v_lost = temp_v.mult(energy_lost_collish).mag();
     heat += mass*v_lost*v_lost/2;
-    velocity.mult(1-energy_lost_angle_modified);
+    velocity.mult(1-energy_lost_collish);
     
-    return collish.mult(energy_mod);
+    return collish;
   }
   
   boolean collided(Particle other){
@@ -243,15 +245,18 @@ class Particle{
   
   
   void update() {
+     
+
+    
     updateVelocity();
     updatePosition();
     resetAcceleration();
-    borders();
+    //borders();
     render();
   }
   
   void updateVelocity(){
-    velocity.add(acceleration);
+    velocity = velocity.add(acceleration);
     if(explosionCycle){
       velocity.limit(maxspeed*9);
       heat = 0;
@@ -265,7 +270,7 @@ class Particle{
  
   
   void updatePosition(){
-    position.add(velocity);
+    position = position.add(velocity);
   }
   
   void resetAcceleration(){
